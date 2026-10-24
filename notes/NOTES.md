@@ -8,15 +8,19 @@
 - insert do Clickhouse pod 1mil rows (max_insert_block_size) - + další podmínky? - je atomic
 
 ### Persistance
- - Kafka :)
+ - Kafka
  - commit až po tom co jsou logy zapsané v Clickhousu
  - řeší scalability (Kafka partitions)
- - nepotřebuju DB/Soubor zápis)
+ - nepotřebuju DB/Soubor zápis
 
 #### Atomicita
-- Kafka commit + Clickhouse commit
+- Clickhouse Kafka Sink tohle řeší ale neumí moc upravovat data (-> irelevantní)
+- Clickhouse commit + Kafka commit - dupes jenom pokud se stane Clickhouse insert bez Kafka commitu
 - ukládat logy tak aby se neuložil stejnej 2x (hash nějakých atributů, ?, zpomalí)
-- uložit offset kafky do db společně s logama (to snad bude atomic?)
+  - pro případ že anonymizer spadne uprostřed téhle operace
+  - Click house [ReplacingMergeTree](https://clickhouse.com/docs/reference/engines/table-engines/mergetree-family/replacingmergetree) 
+  - duplicates které by se mohly objevit (ne moc často - jen při nešťastném pádu) - nebudou vidět 
+  - klíč (order by) - resourceId a timestamp (a ip?)
 
 ### Batche
 - buď velikost nebo čas - co se naplní dřív
