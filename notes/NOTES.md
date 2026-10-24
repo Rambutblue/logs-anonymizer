@@ -26,8 +26,12 @@
 - nastavitelné z configu
 
 ### Log input formát
-- ??
+```log
+2026-10-24 14:16:00 2026/10/24 12:16:00 Decoded: timestampEpochMilli=1792841824754 resourceId=420575753 bytesSent=883321 requestTimeMilli=3313 responseStatus=403 cacheStatus="STALE" method="HEAD" remoteAddr="177.33.54.104" url="/images/preview/media/fetch/b12ia4grz7lgrjq9ul45w.json"
+```
+- -> stačí přepsat adresu
 
 ### Paralelizace
 - goroutines pokud by byla anonymizace složitější
 - jinak více instancí lepší (?)
+- pokud by byl bottleneck přepisování, šel by udělat worker pooling

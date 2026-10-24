@@ -90,3 +90,13 @@ services:
       KAFKA_PRODUCER_DELAY_MS: 5000
     depends_on:
       - kafka
+
+  anonymizer:
+    container_name: anonymizer
+    build: anonymizer
+    restart: on-failure
+    environment:
+      KAFKA_BROKERS: kafka:9093
+      KAFKA_TOPIC: http_log
+    depends_on:
+      - kafka
