@@ -2,8 +2,9 @@ package main
 
 import (
 	"anonymizer/internal/config"
+	"anonymizer/internal/capnproto"
+	"anonymizer/internal/logic"
 
-	"capnproto.org/go/capnp/v3"
 	"github.com/segmentio/kafka-go"
 
 	"context"
@@ -27,27 +28,23 @@ func main() {
 		}
 		log.Printf("Received message: %v", msg)
 
-		// decode the message from capnproto
-		cm, err := capnp.Unmarshal(msg.Value)
+		rec, err := capnproto.GetLog(&msg.Value)
 		if err != nil {
-			log.Fatalf("Error unmarshalling capnp message: %v", err)
+			log.Printf("Error decoding message: %v", err)
+			continue
 		}
-		root, err := cm.Root()
-		if err != nil {
-			log.Fatalf("Error reading capnp root: %v", err)
-		}
-		s := root.Struct()
-		text := func(i uint16) string {
-			p, err := s.Ptr(i)
-			if err != nil {
-				log.Fatalf("Error reading pointer %d: %v", i, err)
-			}
-			return p.Text()
-		}
+		rec = logic.Anonymize(rec)
 		log.Printf(
 			"Decoded: timestampEpochMilli=%d resourceId=%d bytesSent=%d requestTimeMilli=%d responseStatus=%d cacheStatus=%q method=%q remoteAddr=%q url=%q",
-			s.Uint64(0), s.Uint64(8), s.Uint64(16), s.Uint64(24), s.Uint16(32),
-			text(0), text(1), text(2), text(3),
+			rec.TimestampEpochMilli,
+			rec.ResourceId,
+			rec.BytesSent,
+			rec.RequestTimeMilli,
+			rec.ResponseStatus,
+			rec.CacheStatus,
+			rec.Method,
+			rec.RemoteAddr,
+			rec.URL,
 		)
 	}
 }

@@ -1,5 +1,9 @@
 @0xf42cd342ff520eca;
 
+using Go = import "/go.capnp";
+$Go.package("httplog");
+$Go.import("anonymizer/internal/httplog");
+
 struct HttpLogRecord {
   timestampEpochMilli @0 :UInt64;
   resourceId @1 :UInt64;
