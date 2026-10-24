@@ -5,7 +5,6 @@
 - velikost batchů - ? - počítat z provozu ?
 - rozdělit na 2 části - anonymizace a pushování logů do Clickhousu
 - batche ukládat do souborů (DB?) pro persistance + startup recovery
-- insert do Clickhouse pod 1mil rows (max_insert_block_size) - + další podmínky? - je atomic
 
 ### Persistance
  - Kafka
@@ -24,13 +23,11 @@
 
 ### Batche
 - buď velikost nebo čas - co se naplní dřív
-- nastavitelné z konfigu
-
-### Atomicity Clickhousu
-- ??
+- nastavitelné z configu
 
 ### Log input formát
 - ??
 
 ### Paralelizace
-- ??
+- goroutines pokud by byla anonymizace složitější
+- jinak více instancí lepší (?)
