@@ -1,3 +1,4 @@
+## Thought process/poznámky
 ### Assumptions
  - IP adresa v log entries je x.x.x.x, jinak je log invalid a zahodim ho (?) - ověřit log producerem
 
@@ -32,6 +33,49 @@
 - -> stačí přepsat adresu
 
 ### Paralelizace
-- goroutines pokud by byla anonymizace složitější
+- goroutines pro anonymizaci pokud by byla složitější
 - jinak více instancí lepší (?)
 - pokud by byl bottleneck přepisování, šel by udělat worker pooling
+
+## Report
+
+### Clickhouse model
+ - `http_log` tabulka drží data, `http_log_totals_mv` - MV držící agregované statistky po minutách
+ - `http_log` má `ReplacingMergeTree` engine - pro případ, že je záznam vložen vícekrát (je vložen, alenení commitnut do Kafky - při restartu se vloží znova)
+ - pro stejné batche vložené vícekrát (): `SETTINGS non_replicated_deduplication_window = 1000`
+ - `"insert_deduplicate": 1, "deduplicate_blocks_in_dependent_materialized_views": 1` - propisuje dropnuté batche i pro MV
+ - limitace/problém - záznamy deduplikované pomocí `ReplacingMergeTree` enginu se už nepropíšou do MV
+  - řešením by mohl být rebuild MV po pádu, nebo duplikáty ignorovat, s tím že pády by neměly být časté a neměly by výrazně ovlivnit statistiky a pro přesné logy lze udělat query nad `http_log` tabulkou s FINAL keywordem 
+
+### Aplikace
+- `main` rozběhne 2 goroutines
+- `fetch` tahá logy z Kafky a předává je přes channel `Run`, který v loopu anonymizuje a insertuje do Clickhousu pokud je batch plný nebo uplynulo dost času
+- nekonzistence nastává v případě že je insertnut batch ale není commited do Kafky (další spuštění insertne změny znovu) - tohle řeší `ReplacingMergeTree` v Clickhousus - anonimizer to dále neřeší
+- paralelizace lze pomocí vícero instancí a nastavení více partitions Kafky
+
+
+
+### Improvements/Pitfalls
+
+#### Latence
+- log je zapsán do DB nejpozději po `LOG_BATCH_MAX_TIME` + insert time
+- batch size/time je třeba nastavit ručně
+
+#### Data loss
+- Anonymizer nebo Clickhouse spadne na více než je `KAFKA_LOG_RETENTION_MS`
+- neanonymizovatelné logy jsou dropnuty
+
+#### Duplikáty
+- popsáno v Clickhouse sekci
+
+#### Možná rozšíření
+- adaptive batch sizing
+- paralelní anonymizování v rámci jedné instance
+- fetchování dalšíhobatche zatímco se předchozí insertuje
+- backfill a korekce MV v DB
+
+#### Ostatní
+- aplikace obecně moc neřeší errorhandling 
+  - Clickhouse errory jsou logovány jako warnings a insert je zkoušen dokola, chyba při čtení/anonymizování znamená přeskočení logu
+  
+
