@@ -29,7 +29,7 @@ func NewProcessor(logger *slog.Logger, consumer Source, clickhouse Inserter, siz
 }
 
 func (p *Processor) Run(ctx context.Context, channel <-chan consumer.Message) error {
-	batch := batch.NewBatch()
+	batch := batch.New()
 	var flushTimer <-chan time.Time
 
 	for {

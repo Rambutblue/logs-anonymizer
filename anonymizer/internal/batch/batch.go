@@ -12,7 +12,7 @@ type Batch struct {
 	logs     []model.Log
 }
 
-func NewBatch() *Batch {
+func New() *Batch {
 	return &Batch{
 		messages: make([]consumer.Message, 0),
 		logs:     make([]model.Log, 0),
