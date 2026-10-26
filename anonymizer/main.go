@@ -1,21 +1,20 @@
 package main
 
 import (
-	"anonymizer/internal/config"
-	"anonymizer/internal/logic"
-	"anonymizer/internal/consumer"
 	"anonymizer/internal/clickhouse"
+	"anonymizer/internal/config"
+	"anonymizer/internal/consumer"
+	"anonymizer/internal/pipeline"
 
 	"context"
-	"log/slog"
 	"golang.org/x/sync/errgroup"
+	"log/slog"
 )
 
 func main() {
 	cfg := config.GetConfig()
 	bgCtx := context.Background()
 	g, ctx := errgroup.WithContext(bgCtx)
-
 
 	messageChannel := make(chan consumer.Message)
 
@@ -34,10 +33,10 @@ func main() {
 	}
 	defer clickhouse.Close()
 
-	processor := logic.NewProcessor(slog.Default(), consumer, clickhouse, cfg.LogBatchSize, cfg.LogBatchMaxTime)
+	processor := pipeline.NewProcessor(slog.Default(), consumer, clickhouse, cfg.LogBatchSize, cfg.LogBatchMaxTime)
 
 	g.Go(func() error {
-		return logic.Fetch(ctx, consumer, messageChannel)
+		return pipeline.Fetch(ctx, consumer, messageChannel)
 	})
 
 	g.Go(func() error {

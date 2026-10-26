@@ -1,4 +1,4 @@
-package httplog
+package model
 
 type Log struct {
 	TimestampEpochMilli uint64

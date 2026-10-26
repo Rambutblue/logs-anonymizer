@@ -1,16 +1,16 @@
-package helpers
+package retry
 
-import(
+import (
 	"context"
-	"time"
 	"log/slog"
+	"time"
 )
 
-type Task func () error
+type Task func() error
 
 var (
 	maxRetryTime = 30 // in seconds
-	maxAfter = 5
+	maxAfter     = 5
 )
 
 func Retry(ctx context.Context, task Task, logger *slog.Logger) error {
@@ -35,5 +35,5 @@ func Retry(ctx context.Context, task Task, logger *slog.Logger) error {
 
 func calcTimeout(attempts int, max_after int) time.Duration {
 	// Exponential with a max cap
-	return time.Duration(min(2 << min(attempts, max_after), maxRetryTime)) * time.Second
+	return time.Duration(min(2<<min(attempts, max_after), maxRetryTime)) * time.Second
 }

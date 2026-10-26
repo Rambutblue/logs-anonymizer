@@ -2,40 +2,41 @@ package capnproto
 
 import (
 	"anonymizer/internal/httplog"
+	"anonymizer/internal/model"
 	"capnproto.org/go/capnp/v3"
 )
 
-func GetLog(msg *[]byte) (httplog.Log, error) {
+func GetLog(msg *[]byte) (model.Log, error) {
 	cm, err := capnp.Unmarshal(*msg)
 	if err != nil {
-		return httplog.Log{}, err
+		return model.Log{}, err
 	}
 	log, err := httplog.ReadRootHttpLogRecord(cm)
 	if err != nil {
-		return httplog.Log{}, err
+		return model.Log{}, err
 	}
 
 	cacheStatus, err := log.CacheStatus()
 	if err != nil {
-		return httplog.Log{}, err
-	}
-	
-    method, err := log.Method()
-	if err != nil {
-		return httplog.Log{}, err
-	}
-	
-	remoteAddr, err := log.RemoteAddr()
-	if err != nil {
-		return httplog.Log{}, err
-	}
-	
-	url, err := log.Url()
-	if err != nil {
-		return httplog.Log{}, err
+		return model.Log{}, err
 	}
 
-	return httplog.Log{
+	method, err := log.Method()
+	if err != nil {
+		return model.Log{}, err
+	}
+
+	remoteAddr, err := log.RemoteAddr()
+	if err != nil {
+		return model.Log{}, err
+	}
+
+	url, err := log.Url()
+	if err != nil {
+		return model.Log{}, err
+	}
+
+	return model.Log{
 		TimestampEpochMilli: log.TimestampEpochMilli(),
 		ResourceId:          log.ResourceId(),
 		BytesSent:           log.BytesSent(),

@@ -1,4 +1,4 @@
-package logic
+package pipeline
 
 import (
 	"anonymizer/internal/consumer"

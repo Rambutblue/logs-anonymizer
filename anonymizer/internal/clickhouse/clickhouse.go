@@ -1,7 +1,7 @@
 package clickhouse
 
 import (
-	"anonymizer/internal/httplog"
+	"anonymizer/internal/model"
 
 	"context"
 	"time"
@@ -23,8 +23,8 @@ type Client struct {
 
 func New(ctx context.Context, cfg Config) (*Client, error) {
 	conn, err := ch.Open(&ch.Options{
-		Addr:        []string{cfg.Addr},
-		Auth:        ch.Auth{Database: cfg.Database, Username: cfg.Username, Password: cfg.Password},
+		Addr: []string{cfg.Addr},
+		Auth: ch.Auth{Database: cfg.Database, Username: cfg.Username, Password: cfg.Password},
 		// Could be configed
 		DialTimeout: 5 * time.Second,
 		ReadTimeout: 30 * time.Second,
@@ -45,7 +45,7 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
 
 }
 
-func (c *Client) InsertBatch(ctx context.Context, logs []httplog.Log) error {
+func (c *Client) InsertBatch(ctx context.Context, logs []model.Log) error {
 	if len(logs) == 0 {
 		return nil
 	}
@@ -57,8 +57,8 @@ func (c *Client) InsertBatch(ctx context.Context, logs []httplog.Log) error {
 	}
 
 	for _, l := range logs {
-    	err := batch.Append(time.UnixMilli(int64(l.TimestampEpochMilli)).UTC(), l.ResourceId, l.BytesSent, l.RequestTimeMilli, l.ResponseStatus, l.CacheStatus, l.Method, l.RemoteAddr, l.URL, l.KafkaTopic, l.KafkaPartition, l.KafkaOffset)
-	
+		err := batch.Append(time.UnixMilli(int64(l.TimestampEpochMilli)).UTC(), l.ResourceId, l.BytesSent, l.RequestTimeMilli, l.ResponseStatus, l.CacheStatus, l.Method, l.RemoteAddr, l.URL, l.KafkaTopic, l.KafkaPartition, l.KafkaOffset)
+
 		if err != nil {
 			batch.Abort()
 			return err

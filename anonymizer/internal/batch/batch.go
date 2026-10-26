@@ -1,25 +1,25 @@
-package logic
+package batch
 
 import (
 	"anonymizer/internal/consumer"
-	"anonymizer/internal/httplog"
+	"anonymizer/internal/model"
 )
 
 // Keep logs to be inserted and messages to commit
 
 type Batch struct {
 	messages []consumer.Message
-	logs []httplog.Log
+	logs     []model.Log
 }
 
 func NewBatch() *Batch {
 	return &Batch{
 		messages: make([]consumer.Message, 0),
-		logs:     make([]httplog.Log, 0),
+		logs:     make([]model.Log, 0),
 	}
 }
 
-func (b *Batch) Add(msg consumer.Message, log httplog.Log) {
+func (b *Batch) Add(msg consumer.Message, log model.Log) {
 	b.messages = append(b.messages, msg)
 	b.logs = append(b.logs, log)
 }
@@ -45,7 +45,7 @@ func (b *Batch) SkippedCount() int {
 	return len(b.messages) - len(b.logs)
 }
 
-func (b *Batch) Logs() []httplog.Log {
+func (b *Batch) Logs() []model.Log {
 	return b.logs
 }
 

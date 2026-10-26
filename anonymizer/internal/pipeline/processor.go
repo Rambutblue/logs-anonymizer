@@ -1,10 +1,9 @@
-package logic
+package pipeline
 
 import (
-	"anonymizer/internal/capnproto"
+	"anonymizer/internal/batch"
 	"anonymizer/internal/consumer"
-	"anonymizer/internal/httplog"
-	"anonymizer/internal/helpers"
+	"anonymizer/internal/retry"
 	"context"
 	"time"
 
@@ -12,7 +11,7 @@ import (
 )
 
 type Processor struct {
-	logger    *slog.Logger
+	logger     *slog.Logger
 	consumer   Source
 	clickhouse Inserter
 	sizeLimit  int
@@ -30,8 +29,8 @@ func NewProcessor(logger *slog.Logger, consumer Source, clickhouse Inserter, siz
 }
 
 func (p *Processor) Run(ctx context.Context, channel <-chan consumer.Message) error {
-	batch := NewBatch()
-	var flushTimer <-chan time.Time 
+	batch := batch.NewBatch()
+	var flushTimer <-chan time.Time
 
 	for {
 		select {
@@ -44,8 +43,8 @@ func (p *Processor) Run(ctx context.Context, channel <-chan consumer.Message) er
 			log, err := ProcessMessage(&msg)
 			if err != nil {
 				p.logger.Warn("dropping message",
-    			"partition", msg.Partition, "offset", msg.Offset, 
-				"error", err)
+					"partition", msg.Partition, "offset", msg.Offset,
+					"error", err)
 
 				batch.Skip(msg)
 			} else {
@@ -74,8 +73,8 @@ func (p *Processor) Run(ctx context.Context, channel <-chan consumer.Message) er
 	}
 }
 
-func (p *Processor) InsertBatch(ctx context.Context, batch *Batch) error {
-	err := helpers.Retry(ctx, func() error {
+func (p *Processor) InsertBatch(ctx context.Context, batch *batch.Batch) error {
+	err := retry.Retry(ctx, func() error {
 		return p.clickhouse.InsertBatch(ctx, batch.Logs())
 	}, p.logger)
 	if err != nil {
@@ -97,18 +96,4 @@ func (p *Processor) InsertBatch(ctx context.Context, batch *Batch) error {
 	batch.Clear()
 
 	return nil
-}
-
-func ProcessMessage(msg *consumer.Message) (httplog.Log, error) {
-	log, err := capnproto.GetLog(&msg.Value)
-	if err != nil {
-		return httplog.Log{}, err
-	}
-
-	// Add metadata
-	log.KafkaTopic = msg.Topic
-	log.KafkaPartition = uint16(msg.Partition)
-	log.KafkaOffset = uint64(msg.Offset)
-
-	return Anonymize(log), nil
 }

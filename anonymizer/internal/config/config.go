@@ -36,11 +36,11 @@ func GetConfig() Config {
 	clickhousePassword := getEnv("CLICKHOUSE_PASSWORD", "")
 
 	return Config{
-		KafkaBrokers:    kafkaBrokers,
-		KafkaTopic:      kafkaTopic,
-		KafkaGroupID:    kafkaGroupID,
-		LogBatchSize:    logBatchSize,
-		LogBatchMaxTime: logBatchMaxTime,
+		KafkaBrokers:       kafkaBrokers,
+		KafkaTopic:         kafkaTopic,
+		KafkaGroupID:       kafkaGroupID,
+		LogBatchSize:       logBatchSize,
+		LogBatchMaxTime:    logBatchMaxTime,
 		ClickhouseAddr:     clickhouseAddr,
 		ClickhouseDatabase: clickhouseDatabase,
 		ClickhouseUsername: clickhouseUsername,
