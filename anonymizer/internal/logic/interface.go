@@ -8,7 +8,7 @@ import (
 
 type Source interface {
     Fetch(ctx context.Context) (consumer.Message, error)
-    Commit(ctx context.Context, msgs ...consumer.Message) error
+    Commit(ctx context.Context, msgs []consumer.Message) error
 }
 
 type Inserter interface {

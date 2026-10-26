@@ -37,6 +37,14 @@ func (b *Batch) Size() int {
 	return len(b.messages)
 }
 
+func (b *Batch) LogsCount() int {
+	return len(b.logs)
+}
+
+func (b *Batch) SkippedCount() int {
+	return len(b.messages) - len(b.logs)
+}
+
 func (b *Batch) Logs() []httplog.Log {
 	return b.logs
 }

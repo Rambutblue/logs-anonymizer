@@ -28,7 +28,7 @@ func (c *Consumer) Fetch(ctx context.Context) (Message, error) {
 	return c.reader.FetchMessage(ctx)
 }
 
-func (c *Consumer) Commit(ctx context.Context, msgs ...Message) error {
+func (c *Consumer) Commit(ctx context.Context, msgs []Message) error {
 	return c.reader.CommitMessages(ctx, msgs...)
 }
 

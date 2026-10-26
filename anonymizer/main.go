@@ -6,24 +6,22 @@ import (
 	"anonymizer/internal/consumer"
 	"anonymizer/internal/clickhouse"
 
-	"github.com/segmentio/kafka-go"
-
 	"context"
-	"log"
+	"log/slog"
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
 	cfg := config.GetConfig()
-	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers: cfg.KafkaBrokers,
-		Topic:   cfg.KafkaTopic,
-		GroupID: cfg.KafkaGroupID,
-	})
-	defer r.Close()
+	bgCtx := context.Background()
+	g, ctx := errgroup.WithContext(bgCtx)
 
-	ctx := context.Background()
-	channel := make(chan consumer.Message)
+
+	messageChannel := make(chan consumer.Message)
+
 	consumer := consumer.New(cfg.KafkaBrokers, cfg.KafkaTopic, cfg.KafkaGroupID)
+	defer consumer.Close()
+
 	clickhouse, err := clickhouse.New(ctx, clickhouse.Config{
 		Addr:     cfg.ClickhouseAddr,
 		Database: cfg.ClickhouseDatabase,
@@ -31,20 +29,26 @@ func main() {
 		Password: cfg.ClickhousePassword,
 	})
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed to create clickhouse client", "error", err)
 		return
 	}
 	defer clickhouse.Close()
 
-	processor := logic.NewProcessor(consumer, clickhouse, cfg.LogBatchSize, cfg.LogBatchMaxTime)
+	processor := logic.NewProcessor(slog.Default(), consumer, clickhouse, cfg.LogBatchSize, cfg.LogBatchMaxTime)
 
-	go logic.Fetch(ctx, consumer, channel)
+	g.Go(func() error {
+		return logic.Fetch(ctx, consumer, messageChannel)
+	})
 
-	go processor.Run(ctx, channel)
+	g.Go(func() error {
+		return processor.Run(ctx, messageChannel)
+	})
 
-	select {
-	case <-ctx.Done():
-		log.Println("Shutting down...")
-		return
+	err = g.Wait()
+
+	if err != nil {
+		slog.Error("Error occurred", "error", err)
 	}
+
+	slog.Info("Shutting down...")
 }
