@@ -30,7 +30,7 @@ func GetConfig() Config {
 	logBatchSize := getEnvInt("LOG_BATCH_SIZE", 100)
 	logBatchMaxTime := time.Duration(getEnvInt("LOG_BATCH_MAX_TIME", 5)) * time.Second
 
-	clickhouseAddr := getEnv("CLICKHOUSE_ADDR", "localhost:9000")
+	clickhouseAddr := getEnv("CLICKHOUSE_ADDR", "clickhouse:9000")
 	clickhouseDatabase := getEnv("CLICKHOUSE_DATABASE", "default")
 	clickhouseUsername := getEnv("CLICKHOUSE_USERNAME", "default")
 	clickhousePassword := getEnv("CLICKHOUSE_PASSWORD", "")

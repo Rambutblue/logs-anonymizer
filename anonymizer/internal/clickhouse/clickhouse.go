@@ -4,10 +4,11 @@ import (
 	"anonymizer/internal/httplog"
 
 	"context"
-	"errors"
-)
+	"time"
 
-var errNotImplemented = errors.New("not implemented")
+	ch "github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
+)
 
 type Config struct {
 	Addr     string
@@ -17,17 +18,61 @@ type Config struct {
 }
 
 type Client struct {
-	cfg Config
+	connection driver.Conn
 }
 
 func New(ctx context.Context, cfg Config) (*Client, error) {
-	return nil, errNotImplemented
+	conn, err := ch.Open(&ch.Options{
+		Addr:        []string{cfg.Addr},
+		Auth:        ch.Auth{Database: cfg.Database, Username: cfg.Username, Password: cfg.Password},
+		// Could be configed
+		DialTimeout: 5 * time.Second,
+		ReadTimeout: 30 * time.Second,
+		Compression: &ch.Compression{Method: ch.CompressionLZ4},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = conn.Ping(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{
+		connection: conn,
+	}, nil
+
 }
 
 func (c *Client) InsertBatch(ctx context.Context, logs []httplog.Log) error {
-	return errNotImplemented
+	if len(logs) == 0 {
+		return nil
+	}
+
+	batchCtx := ch.Context(ctx, ch.WithSettings(ch.Settings{"insert_deduplicate": 1, "deduplicate_blocks_in_dependent_materialized_views": 1}))
+	batch, err := c.connection.PrepareBatch(batchCtx, "INSERT INTO http_log (timestamp, resource_id, bytes_sent, request_time_milli, response_status, cache_status, method, remote_addr, url, kafka_topic, kafka_partition, kafka_offset)")
+	if err != nil {
+		return err
+	}
+
+	for _, l := range logs {
+    	err := batch.Append(time.UnixMilli(int64(l.TimestampEpochMilli)).UTC(), l.ResourceId, l.BytesSent, l.RequestTimeMilli, l.ResponseStatus, l.CacheStatus, l.Method, l.RemoteAddr, l.URL, l.KafkaTopic, l.KafkaPartition, l.KafkaOffset)
+	
+		if err != nil {
+			batch.Abort()
+			return err
+		}
+	}
+	err = batch.Send()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *Client) Close() error {
-	return errNotImplemented
+	return c.connection.Close()
 }

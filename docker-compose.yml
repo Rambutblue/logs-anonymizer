@@ -14,9 +14,8 @@ services:
       # With this parameter, default user can be used over network.
       CLICKHOUSE_SKIP_USER_SETUP: 1
       CLICKHOUSE_ALWAYS_RUN_INITDB_SCRIPTS: 1
-    # You can create a schema.sql file and initialize the database with it on container startup.
-    # volumes:
-    #   - ../solution/schema.sql:/docker-entrypoint-initdb.d/1_schema.sql:ro
+    volumes:
+      - ./clickhouse/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
 
   kafka:
     image: apache/kafka:3.9.1
@@ -100,3 +99,4 @@ services:
       KAFKA_TOPIC: http_log
     depends_on:
       - kafka
+      - clickhouse-server

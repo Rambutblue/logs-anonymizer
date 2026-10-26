@@ -38,9 +38,10 @@ func (p *Processor) Run(ctx context.Context, channel <-chan consumer.Message) er
 		//TODO: Check time limit
 		case msg, ok := <-channel:
 			if !ok {
-				return p.InsertBatch(ctx, batch)
+				// Channel closed, flush remaining messages
+				return p.InsertBatch(context.WithoutCancel(ctx), batch)
 			}
-			log, err := ProcessMessage(&msg.Value)
+			log, err := ProcessMessage(&msg)
 			if err != nil {
 				p.logger.Warn("dropping message",
     			"partition", msg.Partition, "offset", msg.Offset, 
@@ -88,21 +89,26 @@ func (p *Processor) InsertBatch(ctx context.Context, batch *Batch) error {
 			"error", err)
 	}
 
-	batch.Clear()
-
 	p.logger.Info("batch inserted and committed",
 		"inserted", batch.LogsCount(),
 		"skipped", batch.SkippedCount(),
 	)
 
+	batch.Clear()
+
 	return nil
 }
 
-func ProcessMessage(msg *[]byte) (httplog.Log, error) {
-	log, err := capnproto.GetLog(msg)
+func ProcessMessage(msg *consumer.Message) (httplog.Log, error) {
+	log, err := capnproto.GetLog(&msg.Value)
 	if err != nil {
 		return httplog.Log{}, err
 	}
+
+	// Add metadata
+	log.KafkaTopic = msg.Topic
+	log.KafkaPartition = uint16(msg.Partition)
+	log.KafkaOffset = uint64(msg.Offset)
 
 	return Anonymize(log), nil
 }

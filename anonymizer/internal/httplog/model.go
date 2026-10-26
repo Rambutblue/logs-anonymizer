@@ -10,4 +10,7 @@ type Log struct {
 	Method              string
 	RemoteAddr          string
 	URL                 string
+	KafkaTopic          string
+	KafkaPartition      uint16
+	KafkaOffset         uint64
 }
