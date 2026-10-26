@@ -19,7 +19,7 @@ type Config struct {
 func GetConfig() Config {
 
 	kafkaBrokers := strings.Split(getEnv("KAFKA_BROKERS", "localhost:9092"), ",")
-	kafkaTopic := getEnv("KAFKA_TOPIC", "logs")
+	kafkaTopic := getEnv("KAFKA_TOPIC", "http_log")
 	kafkaGroupID := getEnv("KAFKA_GROUP_ID", "logs-anonymizer")
 
 	logBatchSize := getEnvInt("LOG_BATCH_SIZE", 100)
