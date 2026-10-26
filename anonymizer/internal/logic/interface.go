@@ -1,8 +1,9 @@
 package logic
 
 import (
-	"context"
 	"anonymizer/internal/consumer"
+	"anonymizer/internal/httplog"
+	"context"
 )
 
 type Source interface {
@@ -11,5 +12,5 @@ type Source interface {
 }
 
 type Inserter interface {
-	InsertBatch(ctx context.Context, logs []consumer.Message) error
+	InsertBatch(ctx context.Context, logs []httplog.Log) error
 }

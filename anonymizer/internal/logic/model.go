@@ -1,0 +1,46 @@
+package logic
+
+import (
+	"anonymizer/internal/consumer"
+	"anonymizer/internal/httplog"
+)
+
+// Keep logs to be inserted and messages to commit
+
+type Batch struct {
+	messages []consumer.Message
+	logs []httplog.Log
+}
+
+func NewBatch() *Batch {
+	return &Batch{
+		messages: make([]consumer.Message, 0),
+		logs:     make([]httplog.Log, 0),
+	}
+}
+
+func (b *Batch) Add(msg consumer.Message, log httplog.Log) {
+	b.messages = append(b.messages, msg)
+	b.logs = append(b.logs, log)
+}
+
+func (b *Batch) Skip(msg consumer.Message) {
+	b.messages = append(b.messages, msg)
+}
+
+func (b *Batch) Clear() {
+	b.messages = b.messages[:0]
+	b.logs = b.logs[:0]
+}
+
+func (b *Batch) Size() int {
+	return len(b.messages)
+}
+
+func (b *Batch) Logs() []httplog.Log {
+	return b.logs
+}
+
+func (b *Batch) Messages() []consumer.Message {
+	return b.messages
+}
