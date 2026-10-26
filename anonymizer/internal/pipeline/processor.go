@@ -34,7 +34,6 @@ func (p *Processor) Run(ctx context.Context, channel <-chan consumer.Message) er
 
 	for {
 		select {
-		//TODO: Check time limit
 		case msg, ok := <-channel:
 			if !ok {
 				// Channel closed, flush remaining messages
