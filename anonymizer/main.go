@@ -7,47 +7,53 @@ import (
 	"anonymizer/internal/pipeline"
 
 	"context"
-	"golang.org/x/sync/errgroup"
+	"errors"
 	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
+	if err := run(); err != nil && !errors.Is(err, context.Canceled) {
+		slog.Error("program stopped", "error", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	cfg := config.GetConfig()
-	bgCtx := context.Background()
-	g, ctx := errgroup.WithContext(bgCtx)
+	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	g, ctx := errgroup.WithContext(signalCtx)
 
 	messageChannel := make(chan consumer.Message)
 
-	consumer := consumer.New(cfg.KafkaBrokers, cfg.KafkaTopic, cfg.KafkaGroupID)
-	defer consumer.Close()
+	kafkaConsumer := consumer.New(cfg.KafkaBrokers, cfg.KafkaTopic, cfg.KafkaGroupID)
+	defer kafkaConsumer.Close()
 
-	clickhouse, err := clickhouse.New(ctx, clickhouse.Config{
+	clickhouseClient, err := clickhouse.New(ctx, clickhouse.Config{
 		Addr:     cfg.ClickhouseAddr,
 		Database: cfg.ClickhouseDatabase,
 		Username: cfg.ClickhouseUsername,
 		Password: cfg.ClickhousePassword,
 	})
 	if err != nil {
-		slog.Error("failed to create clickhouse client", "error", err)
-		return
+		return err
 	}
-	defer clickhouse.Close()
+	defer clickhouseClient.Close()
 
-	processor := pipeline.NewProcessor(slog.Default(), consumer, clickhouse, cfg.LogBatchSize, cfg.LogBatchMaxTime)
+	processor := pipeline.NewProcessor(slog.Default(), kafkaConsumer, clickhouseClient, cfg.LogBatchSize, cfg.LogBatchMaxTime)
 
 	g.Go(func() error {
-		return pipeline.Fetch(ctx, consumer, messageChannel)
+		return pipeline.Fetch(ctx, kafkaConsumer, messageChannel)
 	})
 
 	g.Go(func() error {
 		return processor.Run(ctx, messageChannel)
 	})
 
-	err = g.Wait()
-
-	if err != nil {
-		slog.Error("Error occurred", "error", err)
-	}
-
-	slog.Info("Shutting down...")
+	return g.Wait()
 }

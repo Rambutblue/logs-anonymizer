@@ -36,6 +36,7 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
 
 	err = conn.Ping(ctx)
 	if err != nil {
+		conn.Close()
 		return nil, err
 	}
 
