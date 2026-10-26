@@ -18,5 +18,5 @@ func ProcessMessage(msg *consumer.Message) (model.Log, error) {
 	log.KafkaPartition = uint16(msg.Partition)
 	log.KafkaOffset = uint64(msg.Offset)
 
-	return anonymize.Anonymize(log), nil
+	return anonymize.Anonymize(log)
 }

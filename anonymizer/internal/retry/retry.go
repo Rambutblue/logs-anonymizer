@@ -8,7 +8,7 @@ import (
 
 type Task func() error
 
-var (
+const (
 	maxRetryTime = 30 // in seconds
 	maxAfter     = 5
 )

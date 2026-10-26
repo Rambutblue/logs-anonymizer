@@ -36,9 +36,11 @@ func (p *Processor) Run(ctx context.Context, channel <-chan consumer.Message) er
 		select {
 		case msg, ok := <-channel:
 			if !ok {
-				// Channel closed, flush remaining messages
-				return p.InsertBatch(context.WithoutCancel(ctx), batch)
+    			flushCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+    			defer cancel()
+    			return p.InsertBatch(flushCtx, batch)
 			}
+
 			log, err := ProcessMessage(&msg)
 			if err != nil {
 				p.logger.Warn("dropping message",
