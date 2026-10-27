@@ -1,3 +1,9 @@
+/*drop the data on startup for testing*/
+/*
+TRUNCATE TABLE IF EXISTS http_log;
+TRUNCATE TABLE IF EXISTS http_log_totals;
+*/
+
 CREATE TABLE IF NOT EXISTS http_log (
     timestamp DateTime64(3),
     resource_id UInt64,
@@ -23,18 +29,17 @@ CREATE TABLE IF NOT EXISTS http_log_totals (
     resource_id UInt64,
     response_status UInt16,
     cache_status LowCardinality(String),
-    remote_addr String,
     bytes_sent UInt64,
     requests UInt64
 )
 ENGINE = SummingMergeTree
 PARTITION BY toYYYYMM(minute)
-ORDER BY (resource_id, minute, response_status, cache_status, remote_addr)
+ORDER BY (resource_id, minute, response_status, cache_status)
 SETTINGS non_replicated_deduplication_window = 1000;
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS http_log_totals_mv TO http_log_totals AS
 SELECT toStartOfMinute(timestamp) AS minute, resource_id, response_status,
-       cache_status, remote_addr,
+       cache_status,
        sum(bytes_sent) AS bytes_sent, count() AS requests
 FROM http_log
-GROUP BY minute, resource_id, response_status, cache_status, remote_addr;
+GROUP BY minute, resource_id, response_status, cache_status;
