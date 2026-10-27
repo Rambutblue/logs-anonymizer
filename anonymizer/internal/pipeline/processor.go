@@ -36,8 +36,10 @@ func (p *Processor) Start(ctx context.Context) error {
 	g, ctx := errgroup.WithContext(ctx)
 	messageChannel := make(chan consumer.Message)
 
+	f := NewFetcher(p.logger, p.backoff, p.consumer)
+
 	g.Go(func() error {
-		return Fetch(ctx, p.consumer, messageChannel)
+		return f.Fetch(ctx, messageChannel)
 	})
 
 	g.Go(func() error {
@@ -55,9 +57,9 @@ func (p *Processor) Run(ctx context.Context, channel <-chan consumer.Message) er
 		select {
 		case msg, ok := <-channel:
 			if !ok {
-    			flushCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
-    			defer cancel()
-    			return p.InsertBatch(flushCtx, batch)
+				flushCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+				defer cancel()
+				return p.InsertBatch(flushCtx, batch)
 			}
 
 			log, err := ProcessMessage(&msg)
@@ -94,7 +96,7 @@ func (p *Processor) Run(ctx context.Context, channel <-chan consumer.Message) er
 }
 
 func (p *Processor) InsertBatch(ctx context.Context, batch *batch.Batch) error {
-	
+
 	if batch.Size() == 0 {
 		return nil
 	}

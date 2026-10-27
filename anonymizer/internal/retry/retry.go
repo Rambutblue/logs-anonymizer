@@ -11,7 +11,7 @@ type Task func() error
 type Backoff func(attempt int) time.Duration
 
 const (
-	maxRetryTime = 30 // in seconds
+	maxRetryTime = 10 // in seconds
 	maxAfter     = 5
 )
 
