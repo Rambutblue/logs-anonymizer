@@ -75,6 +75,11 @@ func (p *Processor) Run(ctx context.Context, channel <-chan consumer.Message) er
 }
 
 func (p *Processor) InsertBatch(ctx context.Context, batch *batch.Batch) error {
+	
+	if batch.Size() == 0 {
+		return nil
+	}
+
 	err := retry.Retry(ctx, func() error {
 		return p.clickhouse.InsertBatch(ctx, batch.Logs())
 	}, p.logger)
