@@ -36,8 +36,8 @@ func GetConfig() Config {
 	clickhouseDatabase := getEnv("CLICKHOUSE_DATABASE", "default")
 	clickhouseUsername := getEnv("CLICKHOUSE_USERNAME", "default")
 	clickhousePassword := getEnv("CLICKHOUSE_PASSWORD", "")
-	clickhouseReadTimeout := time.Duration(getEnvInt("CLICKHOUSE_READ_TIMEOUT", 30)) * time.Second
-	clickhouseDialTimeout := time.Duration(getEnvInt("CLICKHOUSE_DIAL_TIMEOUT", 30)) * time.Second
+	clickhouseReadTimeout := time.Duration(getEnvInt("CLICKHOUSE_READ_TIMEOUT", 5)) * time.Second
+	clickhouseDialTimeout := time.Duration(getEnvInt("CLICKHOUSE_DIAL_TIMEOUT", 5)) * time.Second
 
 	return Config{
 		KafkaBrokers:          kafkaBrokers,
