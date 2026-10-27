@@ -59,7 +59,7 @@ func (c *Client) InsertBatch(ctx context.Context, logs []model.Log) error {
 	}
 
 	for _, l := range logs {
-		err := batch.Append(time.UnixMilli(int64(l.TimestampEpochMilli)).UTC(), l.ResourceId, l.BytesSent, l.RequestTimeMilli, l.ResponseStatus, l.CacheStatus, l.Method, l.RemoteAddr, l.URL, l.KafkaTopic, l.KafkaPartition, l.KafkaOffset)
+		err := batch.Append(l.Timestamp, l.ResourceId, l.BytesSent, l.RequestTimeMilli, l.ResponseStatus, l.CacheStatus, l.Method, l.RemoteAddr, l.URL, l.KafkaTopic, l.KafkaPartition, l.KafkaOffset)
 
 		if err != nil {
 			batch.Abort()
