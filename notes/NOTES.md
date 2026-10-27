@@ -41,19 +41,18 @@
 ### Clickhouse model
  - `http_log` tabulka drží raw data 
  - `http_log_totals_mv` - MV držící agregované statistky po minutách, resource_id, response_status, cache_status 
-  - tyhle 4 statistiky by neměly mít velkou kardinalitu, tak by měl být dobrý poměr řádků které zagregují 
-  - nad ~115mil řádky mi agregační dotazy běžely pod 1s i nad `http_log` tabulkou 
+  - tyhle 3 statistiky by neměly mít velkou kardinalitu, tak by měl být dobrý poměr řádků které zagregují 
  - pro agregaci ip adres je třeba agregovat přes raw tabulku, nebo případně přidat další MV
  - `http_log` má `ReplacingMergeTree` engine - pro případ, že je záznam vložen vícekrát (je vložen, ale není commitnut do Kafky - při restartu se vloží znova)
  - pro stejné batche vložené vícekrát: `SETTINGS non_replicated_deduplication_window = 1000`
  - `"insert_deduplicate": 1, "deduplicate_blocks_in_dependent_materialized_views": 1` - propisuje dropnuté batche i pro MV
  - **limitace/problém** - záznamy deduplikované pomocí `ReplacingMergeTree` enginu se už nepropíšou do MV
-  - řešením by mohl být rebuild MV po pádu, nebo duplikáty ignorovat, s tím že pády by neměly být časté a neměly by výrazně ovlivnit statistiky a pro přesné logy lze udělat query nad `http_log` tabulkou s FINAL keywordem
+  - řešením by mohl být rebuild MV po pádu, nebo duplikáty ignorovat, s tím že pády by neměly být časté a neměly by výrazně ovlivnit statistiky (realný počet logs <= počet logs v mv) a pro přesné logy lze udělat query nad `http_log` tabulkou s FINAL keywordem
 
 ### Aplikace
 - `main` rozběhne 2 goroutines
 - `fetch` tahá logy z Kafky a předává je přes channel `Run`, který v loopu anonymizuje a insertuje do Clickhousu pokud je batch plný nebo uplynulo dost času
-- nekonzistence nastává v případě že je insertnut batch ale není commited do Kafky (další spuštění insertne změny znovu) - tohle řeší `ReplacingMergeTree` v Clickhousus - anonimizer to dále neřeší
+- nekonzistence nastává v případě že je insertnut batch ale není commited do Kafky (další spuštění insertne změny znovu) - tohle řeší `ReplacingMergeTree` v Clickhousus - anonymizer to dále neřeší
 - paralelizace lze pomocí vícero instancí a nastavení více partitions Kafky
 
 ### Testování
@@ -85,7 +84,7 @@
 - adaptive batch sizing
 - paralelní anonymizování v rámci jedné instance
 - fetchování dalšího batche zatímco se předchozí insertuje
-- backfill a korekce MV v DB
+- backfill a korekce MV v DB nebo jiné řešení MV
 
 #### Ostatní
 - aplikace obecně moc neřeší errorhandling 
