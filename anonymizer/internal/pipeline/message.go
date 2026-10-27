@@ -13,7 +13,6 @@ func ProcessMessage(msg *consumer.Message) (model.Log, error) {
 		return model.Log{}, err
 	}
 
-	// Add metadata
 	log.KafkaTopic = msg.Topic
 	log.KafkaPartition = uint16(msg.Partition)
 	log.KafkaOffset = uint64(msg.Offset)

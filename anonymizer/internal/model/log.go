@@ -1,6 +1,9 @@
 package model
 
+import "time"
+
 type Log struct {
+	Timestamp           time.Time
 	TimestampEpochMilli uint64
 	ResourceId          uint64
 	BytesSent           uint64

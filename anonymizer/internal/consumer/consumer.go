@@ -8,8 +8,6 @@ import (
 
 type Message = kafka.Message
 
-// Wrapper around kafka.Reader
-
 type Consumer struct {
 	reader *kafka.Reader
 }

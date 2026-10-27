@@ -5,8 +5,6 @@ import (
 	"anonymizer/internal/model"
 )
 
-// Keep logs to be inserted and messages to commit
-
 type Batch struct {
 	messages []consumer.Message
 	logs     []model.Log

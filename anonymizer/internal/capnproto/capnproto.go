@@ -4,6 +4,9 @@ import (
 	"anonymizer/internal/httplog"
 	"anonymizer/internal/model"
 	"capnproto.org/go/capnp/v3"
+	"time"
+	"math"
+	"errors"
 )
 
 func GetLog(msg *[]byte) (model.Log, error) {
@@ -36,7 +39,15 @@ func GetLog(msg *[]byte) (model.Log, error) {
 		return model.Log{}, err
 	}
 
+	var timestamp time.Time
+	if log.TimestampEpochMilli() <= uint64(math.MaxInt64) {
+		timestamp = time.UnixMilli(int64(log.TimestampEpochMilli())).UTC()
+	} else {
+		return model.Log{}, errors.New("timestamp exceeds maximum int64 value")
+	}
+
 	return model.Log{
+		Timestamp:           timestamp,
 		TimestampEpochMilli: log.TimestampEpochMilli(),
 		ResourceId:          log.ResourceId(),
 		BytesSent:           log.BytesSent(),

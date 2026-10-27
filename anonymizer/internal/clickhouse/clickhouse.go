@@ -11,10 +11,12 @@ import (
 )
 
 type Config struct {
-	Addr     string
-	Database string
-	Username string
-	Password string
+	Addr        string
+	Database    string
+	Username    string
+	Password    string
+	DialTimeout time.Duration
+	ReadTimeout time.Duration
 }
 
 type Client struct {
@@ -25,9 +27,8 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
 	conn, err := ch.Open(&ch.Options{
 		Addr: []string{cfg.Addr},
 		Auth: ch.Auth{Database: cfg.Database, Username: cfg.Username, Password: cfg.Password},
-		// Could be configed
-		DialTimeout: 5 * time.Second,
-		ReadTimeout: 30 * time.Second,
+		DialTimeout: cfg.DialTimeout,
+		ReadTimeout: cfg.ReadTimeout,
 		Compression: &ch.Compression{Method: ch.CompressionLZ4},
 	})
 	if err != nil {

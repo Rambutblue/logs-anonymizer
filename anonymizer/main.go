@@ -35,6 +35,8 @@ func run() error {
 		Database: cfg.ClickhouseDatabase,
 		Username: cfg.ClickhouseUsername,
 		Password: cfg.ClickhousePassword,
+		DialTimeout: cfg.ClickhouseDialTimeout,
+		ReadTimeout: cfg.ClickhouseReadTimeout,
 	})
 	if err != nil {
 		return err

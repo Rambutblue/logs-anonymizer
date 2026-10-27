@@ -15,10 +15,12 @@ type Config struct {
 	LogBatchSize    int
 	LogBatchMaxTime time.Duration
 
-	ClickhouseAddr     string
-	ClickhouseDatabase string
-	ClickhouseUsername string
-	ClickhousePassword string
+	ClickhouseAddr        string
+	ClickhouseDatabase    string
+	ClickhouseUsername    string
+	ClickhousePassword    string
+	ClickhouseReadTimeout time.Duration
+	ClickhouseDialTimeout time.Duration
 }
 
 func GetConfig() Config {
@@ -34,17 +36,21 @@ func GetConfig() Config {
 	clickhouseDatabase := getEnv("CLICKHOUSE_DATABASE", "default")
 	clickhouseUsername := getEnv("CLICKHOUSE_USERNAME", "default")
 	clickhousePassword := getEnv("CLICKHOUSE_PASSWORD", "")
+	clickhouseReadTimeout := time.Duration(getEnvInt("CLICKHOUSE_READ_TIMEOUT", 30)) * time.Second
+	clickhouseDialTimeout := time.Duration(getEnvInt("CLICKHOUSE_DIAL_TIMEOUT", 30)) * time.Second
 
 	return Config{
-		KafkaBrokers:       kafkaBrokers,
-		KafkaTopic:         kafkaTopic,
-		KafkaGroupID:       kafkaGroupID,
-		LogBatchSize:       logBatchSize,
-		LogBatchMaxTime:    logBatchMaxTime,
-		ClickhouseAddr:     clickhouseAddr,
-		ClickhouseDatabase: clickhouseDatabase,
-		ClickhouseUsername: clickhouseUsername,
-		ClickhousePassword: clickhousePassword,
+		KafkaBrokers:          kafkaBrokers,
+		KafkaTopic:            kafkaTopic,
+		KafkaGroupID:          kafkaGroupID,
+		LogBatchSize:          logBatchSize,
+		LogBatchMaxTime:       logBatchMaxTime,
+		ClickhouseAddr:        clickhouseAddr,
+		ClickhouseDatabase:    clickhouseDatabase,
+		ClickhouseUsername:    clickhouseUsername,
+		ClickhousePassword:    clickhousePassword,
+		ClickhouseReadTimeout: clickhouseReadTimeout,
+		ClickhouseDialTimeout: clickhouseDialTimeout,
 	}
 }
 
