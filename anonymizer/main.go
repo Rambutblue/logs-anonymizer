@@ -31,10 +31,10 @@ func run() error {
 	defer kafkaConsumer.Close()
 
 	clickhouseClient, err := clickhouse.New(ctx, clickhouse.Config{
-		Addr:     cfg.ClickhouseAddr,
-		Database: cfg.ClickhouseDatabase,
-		Username: cfg.ClickhouseUsername,
-		Password: cfg.ClickhousePassword,
+		Addr:        cfg.ClickhouseAddr,
+		Database:    cfg.ClickhouseDatabase,
+		Username:    cfg.ClickhouseUsername,
+		Password:    cfg.ClickhousePassword,
 		DialTimeout: cfg.ClickhouseDialTimeout,
 		ReadTimeout: cfg.ClickhouseReadTimeout,
 	})

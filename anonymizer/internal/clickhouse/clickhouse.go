@@ -25,8 +25,8 @@ type Client struct {
 
 func New(ctx context.Context, cfg Config) (*Client, error) {
 	conn, err := ch.Open(&ch.Options{
-		Addr: []string{cfg.Addr},
-		Auth: ch.Auth{Database: cfg.Database, Username: cfg.Username, Password: cfg.Password},
+		Addr:        []string{cfg.Addr},
+		Auth:        ch.Auth{Database: cfg.Database, Username: cfg.Username, Password: cfg.Password},
 		DialTimeout: cfg.DialTimeout,
 		ReadTimeout: cfg.ReadTimeout,
 		Compression: &ch.Compression{Method: ch.CompressionLZ4},

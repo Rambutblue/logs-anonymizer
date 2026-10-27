@@ -4,9 +4,9 @@ import (
 	"anonymizer/internal/httplog"
 	"anonymizer/internal/model"
 	"capnproto.org/go/capnp/v3"
-	"time"
-	"math"
 	"errors"
+	"math"
+	"time"
 )
 
 func GetLog(msg *[]byte) (model.Log, error) {
