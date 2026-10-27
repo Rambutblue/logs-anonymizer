@@ -1,0 +1,86 @@
+# End-to-end consistency test: Kafka -> anonymizer -> ClickHouse, fed by a finite producer
+# and verified by a checker. Run it with ./run.sh. Separate project, no published ports,
+# so it can run next to the main docker-compose.yml.
+name: logs-anonymizer-test
+
+x-test-env: &test-env
+  TOPIC: http_log
+  AMOUNT: ${AMOUNT:-20000}
+
+services:
+  kafka:
+    image: apache/kafka:3.9.1
+    environment:
+      KAFKA_LISTENERS: CONTROLLER://localhost:9091,DOCKER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: DOCKER://kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9091
+      KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9093 > /dev/null
+      interval: 3s
+      retries: 30
+
+  create-topic:
+    image: apache/kafka:3.9.1
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command: >
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9093 --create --if-not-exists
+      --topic http_log --partitions ${PARTITIONS:-3} --replication-factor 1
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.5-alpine
+    environment:
+      CLICKHOUSE_SKIP_USER_SETUP: 1
+    volumes:
+      - ../clickhouse/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "[ \"$$(clickhouse-client -q 'EXISTS TABLE http_log_totals_mv')\" = 1 ]"]
+      interval: 3s
+      retries: 30
+
+  anonymizer:
+    build: ../anonymizer
+    restart: on-failure
+    environment:
+      KAFKA_BROKERS: kafka:9093
+      KAFKA_TOPIC: http_log
+      LOG_BATCH_SIZE: ${LOG_BATCH_SIZE:-100}
+      LOG_BATCH_MAX_TIME: ${LOG_BATCH_MAX_TIME:-1}
+    depends_on:
+      create-topic:
+        condition: service_completed_successfully
+      clickhouse:
+        condition: service_healthy
+
+  producer:
+    build: &python-image
+      context: ..
+      dockerfile: test/Dockerfile
+    command: python producer.py
+    environment:
+      <<: *test-env
+      KAFKA_BROKERS: kafka:9093
+      RATE: ${RATE:-500}
+    depends_on:
+      create-topic:
+        condition: service_completed_successfully
+
+  checker:
+    build: *python-image
+    command: python checker.py
+    environment:
+      <<: *test-env
+      CLICKHOUSE_HOST: clickhouse
+      CHAOS: ${CHAOS:-0}
+      WAIT_TIMEOUT: ${WAIT_TIMEOUT:-300}
+    depends_on:
+      clickhouse:
+        condition: service_healthy

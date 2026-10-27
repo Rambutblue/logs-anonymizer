@@ -41,7 +41,7 @@
 
 ### Clickhouse model
  - `http_log` tabulka drží data, `http_log_totals_mv` - MV držící agregované statistky po minutách
- - `http_log` má `ReplacingMergeTree` engine - pro případ, že je záznam vložen vícekrát (je vložen, alenení commitnut do Kafky - při restartu se vloží znova)
+ - `http_log` má `ReplacingMergeTree` engine - pro případ, že je záznam vložen vícekrát (je vložen, ale není commitnut do Kafky - při restartu se vloží znova)
  - pro stejné batche vložené vícekrát (): `SETTINGS non_replicated_deduplication_window = 1000`
  - `"insert_deduplicate": 1, "deduplicate_blocks_in_dependent_materialized_views": 1` - propisuje dropnuté batche i pro MV
  - limitace/problém - záznamy deduplikované pomocí `ReplacingMergeTree` enginu se už nepropíšou do MV
@@ -53,6 +53,11 @@
 - nekonzistence nastává v případě že je insertnut batch ale není commited do Kafky (další spuštění insertne změny znovu) - tohle řeší `ReplacingMergeTree` v Clickhousus - anonimizer to dále neřeší
 - paralelizace lze pomocí vícero instancí a nastavení více partitions Kafky
 
+### Testování
+- Unit testy - testují main loop v `processor.go` a samotnou anonymizační logiku
+- E2E test script v `./test`
+  - testuje celý proces, vkládá předem určené logy python scriptem
+  - přepínač `--chaos` náhodně vypíná Kafku/Clickhouse/Anonymizer pro testování konzistence při výpadku
 
 
 ### Improvements/Pitfalls
@@ -77,5 +82,8 @@
 #### Ostatní
 - aplikace obecně moc neřeší errorhandling 
   - Clickhouse errory jsou logovány jako warnings a insert je zkoušen dokola, chyba při čtení/anonymizování znamená přeskočení logu
+  - Stejné s Kafkou - fetch je zkoušen v loopu, nezávisle na erroru co vrací
+
+
   
 
