@@ -1,9 +1,3 @@
-/*drop the data on startup for testing*/
-/*
-TRUNCATE TABLE IF EXISTS http_log;
-TRUNCATE TABLE IF EXISTS http_log_totals;
-*/
-
 CREATE TABLE IF NOT EXISTS http_log (
     timestamp DateTime64(3),
     resource_id UInt64,

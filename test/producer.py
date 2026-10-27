@@ -41,7 +41,13 @@ def main():
     print(f"producing {AMOUNT} records at ~{RATE}/s to {TOPIC}", flush=True)
     start = time.monotonic()
     for i in range(1, AMOUNT + 1):
-        producer.produce(TOPIC, encode(i), on_delivery=on_delivery)
+        value = encode(i)
+        while True:
+            try:
+                producer.produce(TOPIC, value, on_delivery=on_delivery)
+                break
+            except BufferError:
+                producer.poll(0.5)
         producer.poll(0)
 
         ahead = start + i / RATE - time.monotonic()

@@ -20,7 +20,7 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9091
       KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: ${GROUP_INITIAL_REBALANCE_DELAY_MS:-0}
     healthcheck:
       test: /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9093 > /dev/null
       interval: 3s
