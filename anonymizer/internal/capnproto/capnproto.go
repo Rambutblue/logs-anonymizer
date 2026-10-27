@@ -47,15 +47,14 @@ func GetLog(msg *[]byte) (model.Log, error) {
 	}
 
 	return model.Log{
-		Timestamp:           timestamp,
-		TimestampEpochMilli: log.TimestampEpochMilli(),
-		ResourceId:          log.ResourceId(),
-		BytesSent:           log.BytesSent(),
-		RequestTimeMilli:    log.RequestTimeMilli(),
-		ResponseStatus:      log.ResponseStatus(),
-		CacheStatus:         cacheStatus,
-		Method:              method,
-		RemoteAddr:          remoteAddr,
-		URL:                 url,
+		Timestamp:        timestamp,
+		ResourceId:       log.ResourceId(),
+		BytesSent:        log.BytesSent(),
+		RequestTimeMilli: log.RequestTimeMilli(),
+		ResponseStatus:   log.ResponseStatus(),
+		CacheStatus:      cacheStatus,
+		Method:           method,
+		RemoteAddr:       remoteAddr,
+		URL:              url,
 	}, nil
 }

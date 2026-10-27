@@ -5,6 +5,7 @@ import (
 
 	"errors"
 	"testing"
+	"time"
 )
 
 func TestAnonymizeMasksLastOctet(t *testing.T) {
@@ -34,18 +35,18 @@ func TestAnonymizeMasksLastOctet(t *testing.T) {
 
 func TestAnonymizeKeepsOtherFields(t *testing.T) {
 	in := model.Log{
-		TimestampEpochMilli: 1792841824754,
-		ResourceId:          420575753,
-		BytesSent:           883321,
-		RequestTimeMilli:    3313,
-		ResponseStatus:      403,
-		CacheStatus:         "STALE",
-		Method:              "HEAD",
-		RemoteAddr:          "177.33.54.104",
-		URL:                 "/images/preview/media/fetch/b12ia4grz7lgrjq9ul45w.json",
-		KafkaTopic:          "http_log",
-		KafkaPartition:      2,
-		KafkaOffset:         42,
+		Timestamp:        time.UnixMilli(1792841824754).UTC(),
+		ResourceId:       420575753,
+		BytesSent:        883321,
+		RequestTimeMilli: 3313,
+		ResponseStatus:   403,
+		CacheStatus:      "STALE",
+		Method:           "HEAD",
+		RemoteAddr:       "177.33.54.104",
+		URL:              "/images/preview/media/fetch/b12ia4grz7lgrjq9ul45w.json",
+		KafkaTopic:       "http_log",
+		KafkaPartition:   2,
+		KafkaOffset:      42,
 	}
 
 	want := in
