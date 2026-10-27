@@ -8,12 +8,14 @@ import (
 
 type Task func() error
 
+type Backoff func(attempt int) time.Duration
+
 const (
 	maxRetryTime = 30 // in seconds
 	maxAfter     = 5
 )
 
-func Retry(ctx context.Context, task Task, logger *slog.Logger) error {
+func Retry(ctx context.Context, task Task, backoff Backoff, logger *slog.Logger) error {
 	for attempts := 0; ; attempts++ {
 		err := task()
 		if err == nil {
@@ -26,11 +28,15 @@ func Retry(ctx context.Context, task Task, logger *slog.Logger) error {
 		)
 
 		select {
-		case <-time.After(calcTimeout(attempts, maxAfter)):
+		case <-time.After(backoff(attempts)):
 		case <-ctx.Done():
 			return ctx.Err()
 		}
 	}
+}
+
+func DefaultBackoff(attempt int) time.Duration {
+	return calcTimeout(attempt, maxAfter)
 }
 
 func calcTimeout(attempts int, max_after int) time.Duration {

@@ -5,6 +5,7 @@ import (
 	"anonymizer/internal/config"
 	"anonymizer/internal/consumer"
 	"anonymizer/internal/pipeline"
+	"anonymizer/internal/retry"
 
 	"context"
 	"errors"
@@ -12,8 +13,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
-	"golang.org/x/sync/errgroup"
 )
 
 func main() {
@@ -25,11 +24,8 @@ func main() {
 
 func run() error {
 	cfg := config.GetConfig()
-	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	g, ctx := errgroup.WithContext(signalCtx)
-
-	messageChannel := make(chan consumer.Message)
 
 	kafkaConsumer := consumer.New(cfg.KafkaBrokers, cfg.KafkaTopic, cfg.KafkaGroupID)
 	defer kafkaConsumer.Close()
@@ -45,15 +41,7 @@ func run() error {
 	}
 	defer clickhouseClient.Close()
 
-	processor := pipeline.NewProcessor(slog.Default(), kafkaConsumer, clickhouseClient, cfg.LogBatchSize, cfg.LogBatchMaxTime)
+	processor := pipeline.NewProcessor(slog.Default(), kafkaConsumer, clickhouseClient, cfg.LogBatchSize, cfg.LogBatchMaxTime, retry.DefaultBackoff)
 
-	g.Go(func() error {
-		return pipeline.Fetch(ctx, kafkaConsumer, messageChannel)
-	})
-
-	g.Go(func() error {
-		return processor.Run(ctx, messageChannel)
-	})
-
-	return g.Wait()
+	return processor.Start(ctx)
 }

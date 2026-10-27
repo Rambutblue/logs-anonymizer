@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"log/slog"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type Processor struct {
@@ -16,16 +18,33 @@ type Processor struct {
 	clickhouse Inserter
 	sizeLimit  int
 	timeLimit  time.Duration
+	backoff    retry.Backoff
 }
 
-func NewProcessor(logger *slog.Logger, consumer Source, clickhouse Inserter, sizeLimit int, timeLimit time.Duration) *Processor {
+func NewProcessor(logger *slog.Logger, consumer Source, clickhouse Inserter, sizeLimit int, timeLimit time.Duration, backoff retry.Backoff) *Processor {
 	return &Processor{
 		logger:     logger,
 		consumer:   consumer,
 		clickhouse: clickhouse,
 		sizeLimit:  sizeLimit,
 		timeLimit:  timeLimit,
+		backoff:    backoff,
 	}
+}
+
+func (p *Processor) Start(ctx context.Context) error {
+	g, ctx := errgroup.WithContext(ctx)
+	messageChannel := make(chan consumer.Message)
+
+	g.Go(func() error {
+		return Fetch(ctx, p.consumer, messageChannel)
+	})
+
+	g.Go(func() error {
+		return p.Run(ctx, messageChannel)
+	})
+
+	return g.Wait()
 }
 
 func (p *Processor) Run(ctx context.Context, channel <-chan consumer.Message) error {
@@ -82,7 +101,7 @@ func (p *Processor) InsertBatch(ctx context.Context, batch *batch.Batch) error {
 
 	err := retry.Retry(ctx, func() error {
 		return p.clickhouse.InsertBatch(ctx, batch.Logs())
-	}, p.logger)
+	}, p.backoff, p.logger)
 	if err != nil {
 		return err
 	}

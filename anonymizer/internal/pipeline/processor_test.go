@@ -65,7 +65,7 @@ func (f *fakeBroker) snapshot() (events []string, inserts [][]model.Log, commits
 
 func newTestProcessor(broker *fakeBroker, sizeLimit int, timeLimit time.Duration) *Processor {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	return NewProcessor(logger, broker, broker, sizeLimit, timeLimit)
+	return NewProcessor(logger, broker, broker, sizeLimit, timeLimit, func(int) time.Duration { return time.Millisecond })
 }
 
 func encodeLog(t *testing.T, remoteAddr string) []byte {
