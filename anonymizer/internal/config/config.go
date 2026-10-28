@@ -29,7 +29,7 @@ func GetConfig() Config {
 	kafkaTopic := getEnv("KAFKA_TOPIC", "http_log")
 	kafkaGroupID := getEnv("KAFKA_GROUP_ID", "logs-anonymizer")
 
-	logBatchSize := getEnvInt("LOG_BATCH_SIZE", 1000)
+	logBatchSize := getEnvInt("LOG_BATCH_SIZE", 10000)
 	logBatchMaxTime := time.Duration(getEnvInt("LOG_BATCH_MAX_TIME", 5)) * time.Second
 
 	clickhouseAddr := getEnv("CLICKHOUSE_ADDR", "clickhouse:9000")

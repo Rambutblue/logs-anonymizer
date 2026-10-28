@@ -61,6 +61,33 @@
   - testuje celý proces, vkládá předem určené logy python scriptem
   - přepínač `--chaos` náhodně vypíná Kafku/Clickhouse/Anonymizer pro testování konzistence při výpadku
 
+### Performance
+
+| `LOG_BATCH_SIZE` | 1 instance (logs/s) | 2 instances (logs/s) | zrychlení (2 vs 1 instance) |
+|---|---|---|---|
+| 500 | 54 600 | 102 600 | 1.88× |
+| 1000 | 89 500 | 170 600 | 1.91× |
+| 2000 | 124 600 | 236 800 | 1.90× |
+| 5000 | 177 500 | 325 300 | 1.83× |
+| 10000 | 198 000 | 381 000 | 1.92× |
+| 20000 | 216 000 | 421 000 | 1.95× |
+| 50000 | 233 800 | 458 700 | 1.96× |
+| 100000 | 233 300 | 483 600 | 2.07× |
+
+- ve všech runech měla Kafka 2 partitions
+
+#### Čas (zjednodušený hrubý odhad)
+
+- `T_batch = T_fixed + N · T_row`, kde `N` = `LOG_BATCH_SIZE`
+  - `T_fixed ≈ 7.9 ms` – režie jednoho batche (insert + commit round trip do Clickhousu a Kafky), nezávisí na `N`
+  - `T_row ≈ 4.14 µs` – cena jednoho řádku (decode, anonymizace, `Append`, komprese, přenos přes channel)
+- `logs/s = N / T_batch`, pro velké `N` jde k limitu `1 / T_row ≈ 241 000 logs/s` na instanci
+- odhady jsou vypočítány z výše uvedené tabulky pro 1 instanci (lineární regrese z mých pár běhů)
+
+#### Závěr
+- 1 instance má strop asi 240k logs/s
+- 10k je okay default batch size
+- u vyšších batch sizes je bottleneckem zpracovávání logů (očekávané)
 
 ### Improvements/Pitfalls
 
@@ -76,8 +103,9 @@
 - popsáno v Clickhouse a Paralelizace sekci
 
 #### Paralelizace
-- při rebalancování také dochází k vytváření duplicit, které se nepríšou do `http_log` (mergene je), ale do MV, stejně jako nešťastný restart 
-- při 2 instancích a 2 Kafka partitions je zrychlení blízko lineárnímu (+ ~80%)
+- při rebalancování také dochází k vytváření duplicit, které se nepríšou do `http_log` (mergene je), ale do MV ano, stejně jako nešťastný restart 
+- při 2 instancích a 2 Kafka partitions je zrychlení blízko lineárnímu (+ ~90%)
+- viz performance sekce
 
 #### Možná rozšíření
 - fix duplikace při přerozdělování partitions
