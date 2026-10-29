@@ -73,6 +73,7 @@ services:
     environment:
       GF_PATHS_DATA: /var/lib/grafana
       GF_SECURITY_ADMIN_PASSWORD: kafka
+      GF_INSTALL_PLUGINS: grafana-clickhouse-datasource
     volumes:
       - ./docker/grafana/provisioning:/etc/grafana/provisioning
       - ./docker/grafana/dashboards:/var/lib/grafana/dashboards
@@ -86,7 +87,7 @@ services:
     restart: always
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9093
-      KAFKA_PRODUCER_DELAY_MS: 5000
+      KAFKA_PRODUCER_DELAY_MS: 500
     depends_on:
       - kafka
 

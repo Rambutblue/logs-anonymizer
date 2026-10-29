@@ -11,3 +11,11 @@ datasources:
     url: http://prometheus:9090
     isDefault: true
     editable: true
+  - name: ClickHouse
+    type: grafana-clickhouse-datasource
+    jsonData:
+      server: clickhouse      # container_name, same compose network (plugin v3 uses `server`, v4+ `host`)
+      port: 9000              # native protocol (8123 for HTTP)
+      protocol: native
+      defaultDatabase: default
+    editable: true
